@@ -1,15 +1,16 @@
 """Usage:
-  python cli.py train   /path/to/repo [--horizon 180] [--snapshots 4]
-  python cli.py predict /path/to/repo [--top 25]
-  python cli.py scan    /path/to/repo [--top 25]     # no ML, heuristic debt score only
+  python cli.py train   REPO [--horizon 180] [--snapshots 4] [--github owner/repo] [--issues-file issues.json]
+  python cli.py predict REPO [--top 25] [--coverage coverage.xml] [--github owner/repo] [--issues-file issues.json]
+  python cli.py scan    REPO [--top 25] [--coverage coverage.xml]      # no ML, heuristic only
+Then:  streamlit run dashboard.py
 """
 import argparse
+import os
 
-from techdebt.features import build_snapshot, heuristic_debt_score
-from techdebt.git_history import load_history
-from techdebt.model import predict, train
+from techdebt.issues import resolve_issues
+from techdebt.model import train
+from techdebt.pipeline import run
 from techdebt.report import write_reports
-from techdebt.suggest import add_suggestions
 
 
 def main():
@@ -20,21 +21,20 @@ def main():
     ap.add_argument("--snapshots", type=int, default=4)
     ap.add_argument("--model", default="model.joblib")
     ap.add_argument("--top", type=int, default=25)
+    ap.add_argument("--github", help="owner/repo on GitHub to pull bug issues from (uses GITHUB_TOKEN if set)")
+    ap.add_argument("--issues-file", help="JSON cache of issue numbers (read if exists, else written)")
+    ap.add_argument("--coverage", help="coverage.xml (Cobertura) or lcov.info")
+    ap.add_argument("--no-explain", action="store_true", help="skip SHAP")
     a = ap.parse_args()
 
+    issues = resolve_issues(a.github, a.issues_file, os.environ.get("GITHUB_TOKEN"))
     if a.cmd == "train":
-        train(a.repo, a.model, a.horizon, a.snapshots)
+        train(a.repo, a.model, a.horizon, a.snapshots, issues)
         return
 
-    if a.cmd == "predict":
-        df = predict(a.repo, a.model)
-    else:
-        hist = load_history(a.repo)
-        df = build_snapshot(a.repo, hist, int(hist.ts.max()) + 1, rev="HEAD")
-        df["risk"] = float("nan")
-    df["debt_score"] = heuristic_debt_score(df)
-    df = add_suggestions(df).sort_values("risk" if a.cmd == "predict" else "debt_score", ascending=False)
-    print(df.head(a.top)[["risk", "debt_score", "max_ccn", "churn", "bug_fixes", "suggestions"]].to_string())
+    df = run(a.repo, a.cmd, a.model, issues, a.coverage, not a.no_explain)
+    cols = [c for c in ["priority", "risk", "debt_score", "coverage", "max_ccn", "churn", "bug_fixes", "why", "suggestions"] if c in df]
+    print(df.head(a.top)[cols].to_string(max_colwidth=70))
     write_reports(df, a.top)
 
 

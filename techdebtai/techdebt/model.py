@@ -1,6 +1,5 @@
-"""Train / load / apply the maintainability-risk model (time-based, leakage-safe)."""
+"""Train the maintainability-risk model (time-based, leakage-safe)."""
 import joblib
-import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import average_precision_score, roc_auc_score
@@ -10,9 +9,9 @@ from .features import DAY, FEATURES, build_snapshot, future_bug_label
 from .git_history import load_history
 
 
-def make_dataset(repo: str, horizon_days: int = 180, n_snapshots: int = 4) -> pd.DataFrame:
+def make_dataset(repo, horizon_days=180, n_snapshots=4, issues=None) -> pd.DataFrame:
     """Snapshot k looks back k*horizon from the last commit: features use the past, label uses the next window."""
-    hist = load_history(repo)
+    hist = load_history(repo, issues)
     end, start, H = hist.ts.max(), hist.ts.min(), horizon_days * DAY
     frames = []
     for k in range(1, n_snapshots + 1):
@@ -31,13 +30,12 @@ def make_dataset(repo: str, horizon_days: int = 180, n_snapshots: int = 4) -> pd
     return pd.concat(frames)
 
 
-def train(repo: str, out: str = "model.joblib", horizon_days: int = 180, n_snapshots: int = 4):
-    data = make_dataset(repo, horizon_days, n_snapshots)
+def train(repo, out="model.joblib", horizon_days=180, n_snapshots=4, issues=None):
+    data = make_dataset(repo, horizon_days, n_snapshots, issues)
     if data.label.nunique() < 2:
         raise SystemExit("Only one class in labels - need more bug-fix history or a longer horizon.")
 
-    # Newest snapshot = test set (train on the past, test on the "future")
-    test, train_ = data[data.snapshot == 1], data[data.snapshot > 1]
+    test, train_ = data[data.snapshot == 1], data[data.snapshot > 1]   # newest snapshot = test set
     if train_.empty or train_.label.nunique() < 2 or test.label.nunique() < 2:
         train_, test = train_test_split(data, test_size=0.25, stratify=data.label, random_state=42)
         print("  (few snapshots -> using a random split instead of a time split)")
@@ -55,11 +53,3 @@ def train(repo: str, out: str = "model.joblib", horizon_days: int = 180, n_snaps
 
     joblib.dump({"model": model, "features": FEATURES, "horizon_days": horizon_days}, out)
     print(f"\nSaved model -> {out}")
-
-
-def predict(repo: str, model_path: str = "model.joblib") -> pd.DataFrame:
-    bundle = joblib.load(model_path)
-    hist = load_history(repo)
-    df = build_snapshot(repo, hist, int(hist.ts.max()) + 1, rev="HEAD")
-    df["risk"] = bundle["model"].predict_proba(df[bundle["features"]])[:, 1].round(3)
-    return df

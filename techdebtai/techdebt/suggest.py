@@ -20,6 +20,10 @@ def add_suggestions(df: pd.DataFrame, quantile: float = 0.9) -> pd.DataFrame:
 
     def per_row(row):
         tips = [txt.format(v=row[f]) for f, _, txt in RULES if row[f] >= thr[f]]
+        cov = row.get("coverage")
+        risky = row["max_ccn"] >= 10 or row["bug_fixes"] >= 2 or row["churn"] >= thr["churn"]
+        if cov is not None and pd.notna(cov) and cov < 50 and risky:
+            tips.insert(0, f"Only {cov:.0f}% test coverage on risky code: write tests BEFORE refactoring.")
         return " | ".join(tips) if tips else "No major issues"
 
     df = df.copy()
