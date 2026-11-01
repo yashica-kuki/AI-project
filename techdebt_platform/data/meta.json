@@ -1,0 +1,128 @@
+{
+ "mode": "history",
+ "features": [
+  "loc",
+  "sloc",
+  "comment_ratio",
+  "blank_ratio",
+  "cyclomatic_complexity",
+  "max_complexity",
+  "maintainability_index",
+  "halstead_effort",
+  "num_functions",
+  "avg_function_len",
+  "max_nesting_depth",
+  "is_tested",
+  "dependency_count",
+  "commit_count",
+  "author_count",
+  "days_since_change",
+  "churn_rate",
+  "refactor_commits"
+ ],
+ "n_rows": 2687,
+ "n_repos": 23,
+ "validation": "leave-repos-out (10-fold)",
+ "roc_auc": 0.882,
+ "pr_auc": 0.829,
+ "base_rate": 0.353,
+ "importance": [
+  {
+   "feature": "commit_count",
+   "value": 0.2698
+  },
+  {
+   "feature": "refactor_commits",
+   "value": 0.1708
+  },
+  {
+   "feature": "author_count",
+   "value": 0.0797
+  },
+  {
+   "feature": "dependency_count",
+   "value": 0.0657
+  },
+  {
+   "feature": "days_since_change",
+   "value": 0.0534
+  },
+  {
+   "feature": "churn_rate",
+   "value": 0.0528
+  },
+  {
+   "feature": "loc",
+   "value": 0.0511
+  },
+  {
+   "feature": "sloc",
+   "value": 0.0419
+  },
+  {
+   "feature": "blank_ratio",
+   "value": 0.0299
+  },
+  {
+   "feature": "maintainability_index",
+   "value": 0.0298
+  },
+  {
+   "feature": "halstead_effort",
+   "value": 0.0279
+  },
+  {
+   "feature": "num_functions",
+   "value": 0.0264
+  },
+  {
+   "feature": "comment_ratio",
+   "value": 0.025
+  },
+  {
+   "feature": "cyclomatic_complexity",
+   "value": 0.0241
+  },
+  {
+   "feature": "avg_function_len",
+   "value": 0.0234
+  },
+  {
+   "feature": "max_complexity",
+   "value": 0.0146
+  },
+  {
+   "feature": "max_nesting_depth",
+   "value": 0.0087
+  },
+  {
+   "feature": "is_tested",
+   "value": 0.0049
+  }
+ ],
+ "per_repo_auc": {
+  "Discord-OTP-Forcer": 0.786,
+  "FAIR": 0.936,
+  "FreeCAD-DFM-Workbench": 0.903,
+  "SpiceyPy": 0.988,
+  "TileOPs": 0.905,
+  "XMRT-Ecosystem": 0.981,
+  "cli": 0.965,
+  "commander-spellbook-backend": 0.919,
+  "draftjs_exporter": 0.958,
+  "hass-dab-pumps": 0.921,
+  "ibet-Network": 0.556,
+  "ibet-SmartContract": 0.854,
+  "index-digest": 0.844,
+  "kernelci-pipeline": 0.936,
+  "mesa-llm": 0.906,
+  "moldflow-api": 0.942,
+  "penny": 0.96,
+  "pypto": 0.933,
+  "pyticktick": 0.783,
+  "simonwillisonblog": 0.977,
+  "wicked-garden": 0.903
+ },
+ "trained_at": "2026-10-31 21:11:23",
+ "seconds": 55.0
+}

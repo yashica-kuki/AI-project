@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TechDebt-AI</title>
+<style>
+:root{
+  --bg:#f4f6f7;--panel:#fff;--ink:#1b2630;--soft:#53606c;--rule:#d7dde2;--sel:#e6eff0;
+  --accent:#1d5c63;--on-accent:#fff;--bad:#c8402f;--good:#2f7d6d;
+  --ui:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;
+  --code:"Cascadia Mono",Consolas,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root{--bg:#12171b;--panel:#182026;--ink:#e6ecef;--soft:#9aa8b3;--rule:#2b3640;--sel:#1f2d33;--accent:#6fb8bd;--on-accent:#0d1519}}
+*{box-sizing:border-box}
+html{font-size:14px}
+body{margin:0;display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh;background:var(--bg);color:var(--ink);font:14px/1.55 var(--ui)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+a{color:var(--accent)}
+/* sidebar */
+#side{position:sticky;top:0;height:100vh;overflow:auto;background:var(--panel);border-right:1px solid var(--rule);display:flex;flex-direction:column}
+.brand{padding:20px 20px 14px;font-size:17px;font-weight:650;letter-spacing:-.01em}
+.brand small{display:block;font-weight:400;font-size:12px;color:var(--soft);margin-top:2px}
+.sh-h{padding:10px 20px 4px;font-size:12.5px;color:var(--soft)}
+#repos{list-style:none;margin:0;padding:0;flex:1;overflow:auto}
+#repos li{display:grid;grid-template-columns:4px 1fr auto;gap:10px;align-items:center;padding:6px 20px;cursor:pointer;border-left:3px solid transparent}
+#repos li:hover{background:var(--sel)}
+#repos li.on{background:var(--sel);border-left-color:var(--accent);font-weight:600}
+#repos .tick{height:14px}#repos .ct{color:var(--soft);font-size:12px;font-variant-numeric:tabular-nums}
+#repos .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#side nav{border-top:1px solid var(--rule);padding:8px 0}
+#side nav a{display:block;padding:7px 20px;color:var(--ink);text-decoration:none;cursor:pointer;border-left:3px solid transparent}
+#side nav a:hover{background:var(--sel)}#side nav a.on{border-left-color:var(--accent);font-weight:600;background:var(--sel)}
+#modelPill{padding:10px 20px 16px;font-size:12px;color:var(--soft);border-top:1px solid var(--rule)}
+/* main */
+main{padding:28px 40px 60px;min-width:0}
+h1{font-size:28px;line-height:1.15;margin:0 0 10px;font-weight:650;letter-spacing:-.015em}
+h2{font-size:15px;margin:0 0 4px;font-weight:650}
+h3{font-size:13.5px;margin:20px 0 6px;font-weight:650}
+.soft{color:var(--soft)}.small{font-size:12.5px}.mono{font-family:var(--code);font-size:12.5px}
+section{margin-top:34px}
+.readout{font-size:15.5px;max-width:70ch;margin:0 0 6px}
+.analysis{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:44px;align-items:start}
+.detail{position:sticky;top:20px;border-left:1px solid var(--rule);padding-left:26px;max-height:calc(100vh - 40px);overflow:auto}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:36px}
+.ctrl{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;margin:18px 0 0;font-size:13px}
+input[type=text]{padding:6px 9px;border:1px solid var(--rule);border-radius:3px;background:var(--panel);color:var(--ink);font:inherit}
+input[type=range]{accent-color:var(--accent);vertical-align:middle}
+button,.btn{font:inherit;display:inline-block;padding:7px 14px;border:1px solid var(--accent);background:var(--accent);color:var(--on-accent);border-radius:3px;cursor:pointer;text-decoration:none}
+button.quiet,.btn.quiet{background:transparent;color:var(--accent)}button.danger{background:transparent;border-color:var(--bad);color:var(--bad)}
+button:disabled{opacity:.5;cursor:wait}
+/* ranked list */
+.rank{list-style:none;margin:8px 0 0;padding:0;border-top:1px solid var(--rule)}
+.rank li{display:grid;grid-template-columns:4px 26px minmax(0,1fr) 110px 62px;align-items:center;gap:12px;padding:7px 8px 7px 0;border-bottom:1px solid var(--rule);cursor:pointer}
+.rank li:hover,.rank li.on{background:var(--sel)}
+.gut{align-self:stretch}.n{text-align:right;color:var(--soft);font-variant-numeric:tabular-nums;font-size:12px}
+.path{font-family:var(--code);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.path .dir{color:var(--soft)}.path b{font-weight:600}
+.track{height:6px;background:var(--rule)}.track i{display:block;height:100%}
+.val{text-align:right;font-variant-numeric:tabular-nums}.bug{color:var(--bad);font-size:11px}
+.frow{display:grid;grid-template-columns:minmax(0,1fr) 90px 40px;gap:10px;align-items:center;padding:5px 0;border-bottom:1px solid var(--rule);font-size:13px}
+.frow span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.frow .v{text-align:right;font-variant-numeric:tabular-nums}
+.clk{cursor:pointer}svg text{fill:var(--ink);font-family:var(--ui)}svg .ax{stroke:var(--soft);opacity:.5}
+/* tables */
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:6px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--rule)}
+th{position:sticky;top:0;background:var(--bg);cursor:pointer;font-weight:600;user-select:none;color:var(--soft)}
+th:first-child,td:first-child{text-align:left;white-space:normal;word-break:break-all}
+td:first-child{font-family:var(--code);font-size:12.5px}
+tr[data-p]:hover,tr[data-r]:hover{background:var(--sel);cursor:pointer}
+.tw{max-height:480px;overflow:auto;margin-top:8px}
+/* detail */
+.pathh{word-break:break-all;margin:0 0 10px}
+.score b{font-size:34px;line-height:1;font-weight:650;font-variant-numeric:tabular-nums}
+dl.kv{margin:14px 0 0;display:grid;grid-template-columns:1fr auto;gap:0 16px}
+dl.kv dt,dl.kv dd{margin:0;padding:5px 0;border-bottom:1px solid var(--rule)}dl.kv dd{text-align:right;font-variant-numeric:tabular-nums}
+ul.tips{margin:0;padding-left:18px}.tips li{margin:4px 0}
+.why{display:grid;grid-template-columns:150px 1fr 54px;gap:8px;align-items:center;font-size:12.5px;margin:4px 0}
+.why .ar{position:relative;height:12px}.why .ar i{position:absolute;top:0;height:12px}.why .ar:before{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;border-left:1px solid var(--soft)}
+.why span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+/* other views */
+.stats{display:flex;flex-wrap:wrap;gap:6px 34px;margin:14px 0 0}.stats div{min-width:110px}.stats b{display:block;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+.form{display:grid;gap:4px;max-width:620px;margin-top:14px}.form label{margin-top:12px;font-weight:600;font-size:13px}.form input{width:100%}
+.log{margin-top:16px;max-width:760px;border-left:3px solid var(--accent);padding:6px 14px;font:12.5px/1.6 var(--code);white-space:pre-wrap;max-height:240px;overflow:auto;color:var(--soft)}
+.err{color:var(--bad)}.ok{color:var(--good)}
+.bars .r{display:grid;grid-template-columns:190px 1fr 56px;gap:10px;align-items:center;font-size:12.5px;padding:4px 0;border-bottom:1px solid var(--rule)}
+.bars .r span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+label.opt{display:block;margin:8px 0}
+@media (max-width:1100px){.analysis{grid-template-columns:1fr}.detail{position:static;border-left:0;padding-left:0;max-height:none}.two{grid-template-columns:1fr}}
+@media (max-width:760px){body{grid-template-columns:1fr}#side{position:static;height:auto;max-height:46vh}main{padding:20px 18px 40px}}
+</style></head><body>
+<aside id="side">
+  <div class="brand">TechDebt-AI<small>Which files will cause bug fixes next?</small></div>
+  <div class="sh-h">Repositories</div>
+  <ul id="repos"></ul>
+  <nav id="nav"></nav>
+  <div id="modelPill">loading</div>
+</aside>
+<main id="view"></main>
+<script>
+(function(){
+const $=s=>document.querySelector(s), esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmt=v=>v==null?"\u2013":(Number.isInteger(v)?v:Number(v).toFixed(2)), r2=v=>v==null?"\u2013":Number(v).toFixed(2), pct=v=>v==null?"\u2013":Math.round(100*v)+"%";
+const yn=v=>v==null?"\u2013":(v?"yes":"no"), short=(s,n)=>s.length>n?"\u2026"+s.slice(-n):s;
+const STOPS=[[47,125,109],[217,162,27],[200,64,47]];
+function col(v){v=Math.min(Math.max(v||0,0),1);const t=v*2,i=t<1?0:1,f=t<1?t:t-1,a=STOPS[i],b=STOPS[i+1];return"rgb("+a.map((x,k)=>Math.round(x+(b[k]-x)*f)).join(",")+")"}
+async function api(p,o){const r=await fetch(p,o);let j={};try{j=await r.json()}catch(e){}if(!r.ok)throw new Error(j.error||r.statusText);return j}
+const post=(p,b)=>api(p,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)});
+const S={repos:[],repo:null,rows:[],meta:{},tab:"overview",q:"",min:0,top:15,sort:"risk",dir:-1,sel:null,job:null,busy:false,csort:"mean_risk",cdir:-1};
+const COLS=[["risk","risk",r2],["debt_score","debt score",fmt],["sloc","lines",fmt],["max_complexity","max complexity",fmt],["max_nesting_depth","nesting",fmt],["maintainability_index","maint. index",fmt],
+ ["dependency_count","imports",fmt],["is_tested","test file",yn],["bug_fix_commits","bug fixes",fmt],["commit_count","commits*",fmt],["author_count","authors*",fmt],["label","bug-prone",yn]];
+
+async function refresh(){const [r,m]=await Promise.all([api("/api/repos"),api("/api/model")]);S.repos=r.repos;S.meta=m;
+  $("#modelPill").innerHTML="Trained on "+m.n_repos+" repositories ("+m.n_rows+" files), using "+(m.mode==="static"?"code metrics":"code metrics and commit history")+". Held-out ROC-AUC "+m.roc_auc+".";}
+async function pick(name){const j=await api("/api/report?repo="+encodeURIComponent(name));S.repo=name;S.rows=j.rows;S.sel=null}
+function render(){
+  $("#repos").innerHTML=S.repos.map(r=>'<li data-repo="'+esc(r.repo)+'" tabindex="0" class="'+(r.repo===S.repo&&S.tab==="overview"?"on":"")+'"><span class="tick" style="background:'+col(r.mean_risk)+'"></span><span class="nm" title="'+esc(r.repo)+(r.source==="added"?" (you added this)":"")+'">'+esc(r.repo)+(r.source==="added"?" +":"")+'</span><span class="ct">'+r.files+"</span></li>").join("");
+  $("#nav").innerHTML=[["compare","Compare repositories"],["model","Model and training data"],["add","Add a repository"]].map(t=>'<a data-t="'+t[0]+'" tabindex="0" class="'+(S.tab===t[0]?"on":"")+'">'+t[1]+"</a>").join("");
+  $("#view").innerHTML={overview:vOverview,compare:vCompare,model:vModel,add:vAdd}[S.tab]();
+  if(S.tab==="overview"&&S.repo)draw();
+  if(S.tab==="add"||S.tab==="model")logBox();
+}
+const filtered=()=>S.rows.filter(r=>r.rel.toLowerCase().includes(S.q)&&(r.risk||0)>=S.min);
+
+// ---------------------------------------------------------------- one repository
+function vOverview(){
+  if(!S.repo)return '<h1>No repository yet</h1><p class="soft">Add one from the sidebar to see its analysis.</p>';
+  const rp=S.repos.find(r=>r.repo===S.repo)||{}, n=S.rows.length;
+  const top=[...S.rows].sort((a,b)=>b.risk-a.risk).slice(0,10), p10=top.filter(r=>r.label===1).length;
+  const hi=S.rows.filter(r=>r.risk>=0.5).length, pos=S.rows.filter(r=>r.label===1).length;
+  const auc=rp.auc==null?"":" On this repository the ranking reaches an AUC of <b>"+rp.auc+"</b>"+(n<30?" (very few files, so treat that as rough)":"")+".";
+  return '<div class="analysis"><div>'+
+   "<h1>"+esc(S.repo)+"</h1>"+
+   '<p class="readout">'+n+" Python files. <b>"+hi+"</b> score 0.50 or higher. <b>"+pos+"</b> ("+pct(pos/Math.max(n,1))+") really are bug-prone, meaning two or more bug-fix commits. Of the ten files ranked riskiest, <b>"+p10+"</b> are."+auc+"</p>"+
+   '<p class="soft small" style="margin:0">These scores come from a model that was trained without this repository, so they show how it copes with a new project.</p>'+
+   '<div class="ctrl"><label>Path contains <input type="text" id="q" value="'+esc(S.q)+'" placeholder="src/ or utils"></label>'+
+   '<label>Minimum risk <input type="range" id="min" min="0" max="1" step="0.01" value="'+S.min+'"> <span id="minv">'+S.min.toFixed(2)+"</span></label>"+
+   '<label>Rows in list <input type="range" id="top" min="5" max="40" value="'+S.top+'"> <span id="topv">'+S.top+"</span></label>"+
+   '<a class="btn quiet" href="/api/download?repo='+encodeURIComponent(S.repo)+'">Download CSV</a></div>'+
+   '<section><h2>Riskiest files</h2><p class="soft small" style="margin:0">Ranked by risk score. <span class="bug">\u25A0</span> marks files that really are bug-prone.</p><ol class="rank" id="bar"></ol></section>'+
+   '<div class="two"><section><h2>Where the risk sits</h2><p class="soft small" style="margin:0 0 6px">Average risk per folder (files in brackets)</p><div id="fold"></div></section>'+
+   '<section><h2>Size and complexity</h2><p class="soft small" style="margin:0">Each dot is a file; bigger dots import more modules.</p><div id="sc"></div></section></div>'+
+   '<section><h2>All files <span class="soft small" id="tinfo"></span></h2><div class="tw" id="tbl"></div><p class="soft small">*commits and authors are relative to the repository median (1.0 is typical).</p></section>'+
+   '</div><div class="detail" id="detail"></div></div>';
+}
+function draw(){const f=filtered();bar(f);scatter(f);folders(f);table(f);detail()}
+function bar(f){const top=[...f].sort((a,b)=>b.risk-a.risk).slice(0,S.top);
+  $("#bar").innerHTML=top.map((r,i)=>{const p=r.rel,k=p.lastIndexOf("/");
+   return '<li data-p="'+esc(p)+'" tabindex="0" class="'+(S.sel===p?"on":"")+'"><span class="gut" style="background:'+col(r.risk)+'"></span><span class="n">'+(i+1)+'</span><span class="path" title="'+esc(p)+'"><span class="dir">'+esc(short(p.slice(0,k+1),32))+"</span><b>"+esc(p.slice(k+1))+'</b></span><span class="track"><i style="width:'+Math.max(r.risk*100,2)+"%;background:"+col(r.risk)+'"></i></span><span class="val">'+r2(r.risk)+(r.label===1?' <span class="bug" title="really is bug-prone">\u25A0</span>':"")+"</span></li>"}).join("")||'<li class="soft" style="display:block">No files match these filters.</li>';}
+function scatter(f){const W=560,H=340,m={l:44,r:10,t:8,b:40};
+  const xm=Math.max(1,...f.map(r=>Math.log1p(r.sloc||0))),ym=Math.max(1,...f.map(r=>r.max_complexity||0));
+  const X=v=>m.l+Math.log1p(v||0)/xm*(W-m.l-m.r),Y=v=>H-m.b-(v||0)/ym*(H-m.t-m.b);
+  let s='<svg viewBox="0 0 '+W+" "+H+'" width="100%" role="img" aria-label="Scatter of file size against complexity"><g font-size="11"><line class="ax" x1="'+m.l+'" y1="'+(H-m.b)+'" x2="'+(W-m.r)+'" y2="'+(H-m.b)+'"/><line class="ax" x1="'+m.l+'" y1="'+m.t+'" x2="'+m.l+'" y2="'+(H-m.b)+'"/>';
+  [0,.5,1].forEach(t=>{const v=Math.round(ym*t);s+='<text x="'+(m.l-6)+'" y="'+(Y(v)+4)+'" text-anchor="end">'+v+"</text>"});
+  for(let t=1;Math.log1p(t)<=xm;t*=10)s+='<text x="'+X(t)+'" y="'+(H-m.b+15)+'" text-anchor="middle">'+t+"</text>";
+  s+='<text x="'+(W/2+10)+'" y="'+(H-6)+'" text-anchor="middle">source lines (log scale)</text><text x="11" y="'+(H/2)+'" transform="rotate(-90 11 '+(H/2)+')" text-anchor="middle">max function complexity</text></g>';
+  s+=[...f].sort((a,b)=>a.risk-b.risk).map(r=>'<g class="clk" data-p="'+esc(r.rel)+'"><title>'+esc(r.rel)+" | risk "+r2(r.risk)+" | "+fmt(r.sloc)+" lines | complexity "+fmt(r.max_complexity)+'</title><circle cx="'+X(r.sloc)+'" cy="'+Y(r.max_complexity)+'" r="'+(2.5+Math.min((r.dependency_count||0)/4,7))+'" fill="'+col(r.risk)+'" fill-opacity=".75"/></g>').join("");
+  $("#sc").innerHTML=s+"</svg>";}
+function folders(f){const g={};f.forEach(r=>{const p=r.rel.split("/");const k=p.length>2?p.slice(0,2).join("/"):(p.length>1?p[0]:"(top level)");(g[k]=g[k]||[]).push(r.risk)});
+  const a=Object.entries(g).map(([k,v])=>[k,v.reduce((x,y)=>x+y,0)/v.length,v.length]).sort((x,y)=>y[1]-x[1]).slice(0,12);
+  $("#fold").innerHTML=a.map(x=>'<div class="frow"><span class="mono" title="'+esc(x[0])+'">'+esc(short(x[0],26))+" ("+x[2]+')</span><span class="track"><i style="width:'+Math.max(x[1]*100,2)+"%;background:"+col(x[1])+'"></i></span><span class="v">'+r2(x[1])+"</span></div>").join("")||'<p class="soft">No files match these filters.</p>';}
+function table(f){const s=[...f].sort((a,b)=>{const x=a[S.sort],y=b[S.sort];return(typeof x==="string"||typeof y==="string")?String(x).localeCompare(String(y))*S.dir:((x==null?-1:x)-(y==null?-1:y))*S.dir}).slice(0,300);
+  $("#tinfo").textContent="Click a heading to sort, a row for details"+(f.length>300?" (first 300 of "+f.length+")":"");
+  $("#tbl").innerHTML='<table><thead><tr><th data-k="rel">file</th>'+COLS.map(c=>'<th data-k="'+c[0]+'">'+c[1]+(S.sort===c[0]?(S.dir<0?" \u25BC":" \u25B2"):"")+"</th>").join("")+"</tr></thead><tbody>"+
+   s.map(r=>'<tr data-p="'+esc(r.rel)+'"><td>'+esc(r.rel)+"</td>"+COLS.map(c=>"<td"+(c[0]==="risk"?' style="font-weight:650;color:'+col(r.risk)+'"':"")+">"+c[2](r[c[0]])+"</td>").join("")+"</tr>").join("")+"</tbody></table>";}
+function detail(){const el=$("#detail");
+  if(!S.sel){el.innerHTML='<h2>Pick a file</h2><p class="soft">Select a row in the list, a dot, or a table line to see why it was flagged and what to change.</p>';return}
+  const r=S.rows.find(x=>x.rel===S.sel);if(!r)return;
+  const kv=[["Source lines",fmt(r.sloc)],["Max complexity",fmt(r.max_complexity)],["Nesting depth",fmt(r.max_nesting_depth)],["Maintainability index",fmt(r.maintainability_index)],["Imports",fmt(r.dependency_count)],["Is a test file",yn(r.is_tested)],["Bug-fix commits",fmt(r.bug_fix_commits)],["Debt score (0-100)",fmt(r.debt_score)]];
+  let h='<p class="mono pathh">'+esc(r.rel)+'</p><p class="score" style="margin:0"><b style="color:'+col(r.risk)+'">'+r2(r.risk)+'</b> risk score</p><p class="soft small" style="margin:6px 0 0">'+(r.label===1?"This file really has two or more bug-fix commits.":"This file has fewer than two bug-fix commits.")+"</p>"+
+   '<dl class="kv">'+kv.map(k=>"<dt>"+k[0]+"</dt><dd>"+k[1]+"</dd>").join("")+"</dl>"+
+   "<h3>What to change</h3><ul class=\"tips\">"+String(r.suggestions||"").split(" | ").map(s=>"<li>"+esc(s)+"</li>").join("")+"</ul>";
+  const sk=Object.keys(r).filter(k=>k.indexOf("shap_")===0&&r[k]!=null).sort((a,b)=>Math.abs(r[b])-Math.abs(r[a])).slice(0,9);
+  if(sk.length){const mx=Math.max(1e-9,...sk.map(k=>Math.abs(r[k])));
+   h+='<h3>Why the model flags it</h3><p class="soft small" style="margin:0 0 6px">Red pushes the score up, green pulls it down.</p>'+sk.map(k=>{const v=r[k],w=Math.abs(v)/mx*50,f=k.slice(5);
+    return '<div class="why"><span title="'+esc(f)+'">'+esc(f)+" = "+fmt(r[f])+'</span><div class="ar"><i style="'+(v>=0?"left:50%":"left:"+(50-w)+"%")+";width:"+w+"%;background:"+(v>=0?"var(--bad)":"var(--good)")+'"></i></div><span>'+(v>=0?"+":"\u2212")+Math.abs(v).toFixed(3)+"</span></div>"}).join("");}
+  el.innerHTML=h;}
+
+// ---------------------------------------------------------------- compare
+function vCompare(){const k=S.csort,d=S.cdir;
+  const a=[...S.repos].sort((x,y)=>{const p=x[k],q=y[k];return(typeof p==="string"?String(p).localeCompare(q):((p==null?-1:p)-(q==null?-1:q)))*d});
+  const H=[["repo","repository"],["files","files"],["mean_risk","average risk"],["high_risk","files at 0.5+"],["positive_rate","bug-prone"],["auc","AUC on unseen repo"],["source","origin"]];
+  return "<h1>Compare repositories</h1><p class=\"soft\" style=\"max-width:70ch\">Every repository in the training data. The AUC column shows how well the model ranked bug-prone files in that repository when it had not seen it. Click a row to open it.</p>"+
+   '<div class="tw" style="max-height:none"><table><thead><tr>'+H.map(h=>'<th data-c="'+h[0]+'">'+h[1]+(k===h[0]?(d<0?" \u25BC":" \u25B2"):"")+"</th>").join("")+"</tr></thead><tbody>"+
+   a.map(r=>'<tr data-r="'+esc(r.repo)+'"><td>'+esc(r.repo)+"</td><td>"+r.files+'</td><td style="color:'+col(r.mean_risk)+';font-weight:650">'+r2(r.mean_risk)+"</td><td>"+r.high_risk+"</td><td>"+pct(r.positive_rate)+"</td><td>"+(r.auc==null?"\u2013":r.auc)+"</td><td>"+(r.source==="added"?"added by you":"original dataset")+"</td></tr>").join("")+"</tbody></table></div>";}
+
+// ---------------------------------------------------------------- model
+function vModel(){const m=S.meta,imp=m.importance||[],mx=Math.max(1e-9,...imp.map(i=>i.value));
+  const pr=Object.entries(m.per_repo_auc||{}).sort((a,b)=>a[1]-b[1]);
+  return "<h1>Model and training data</h1>"+
+   '<div class="stats"><div><b>'+m.n_repos+'</b><span class="soft">repositories</span></div><div><b>'+m.n_rows+'</b><span class="soft">files</span></div><div><b>'+m.roc_auc+'</b><span class="soft">ROC-AUC, held-out repos</span></div><div><b>'+m.pr_auc+'</b><span class="soft">PR-AUC</span></div><div><b>'+pct(m.base_rate)+'</b><span class="soft">files bug-prone</span></div></div>'+
+   '<p class="soft" style="max-width:70ch">Validation: '+esc(m.validation)+'. Each repository is scored by a model trained on the others. <code>bug_fix_commits</code> is never an input, because the bug-prone label is defined from it and including it would give a meaningless AUC of 1.0. Last trained '+esc(m.trained_at||"")+".</p>"+
+   "<section><h2>Model inputs</h2>"+
+   '<label class="opt"><input type="radio" name="mode" value="static"'+(m.mode==="static"?" checked":"")+'> Code metrics only. Reproducible for any repository; the honest setting.</label>'+
+   '<label class="opt"><input type="radio" name="mode" value="history"'+(m.mode==="history"?" checked":"")+'> Code metrics and commit history. Scores higher, but commit counts include the bug-fix commits that define the label.</label>'+
+   '<p><button id="retrain"'+(S.busy?" disabled":"")+'>Retrain with these inputs</button></p><div class="log" id="log" style="display:none"></div></section>'+
+   '<div class="two"><section><h2>What the model relies on</h2><div class="bars">'+imp.map(i=>'<div class="r"><span>'+esc(i.feature)+'</span><span class="track"><i style="width:'+(i.value/mx*100)+'%;background:var(--accent)"></i></span><span>'+i.value.toFixed(3)+"</span></div>").join("")+"</div></section>"+
+   '<section><h2>AUC for each repository, unseen</h2><p class="soft small" style="margin:0">Repositories with fewer than 8 files, or only one kind of file, are left out.</p><div class="bars">'+pr.map(([n,v])=>'<div class="r"><span>'+esc(n)+'</span><span class="track"><i style="width:'+v*100+"%;background:"+col(1-v)+'"></i></span><span>'+v+"</span></div>").join("")+"</div></section></div>";}
+
+// ---------------------------------------------------------------- add
+function vAdd(){const added=S.repos.filter(r=>r.source==="added");
+  return "<h1>Add a repository</h1><p class=\"soft\" style=\"max-width:70ch\">The tool reads every Python file, builds the same 20 columns as the original dataset, appends them to the training data and retrains on everything. The analysis opens when it finishes. The repository needs its full git history.</p>"+
+   '<div class="form"><label for="src">Git URL or folder on this computer</label><input type="text" id="src" placeholder="https://github.com/owner/repo  or  C:\\projects\\repo">'+
+   '<label for="nm">Display name (optional)</label><input type="text" id="nm" placeholder="defaults to the repository name"></div>'+
+   '<p><button id="run"'+(S.busy?" disabled":"")+'>Analyze and add to training data</button></p><div class="log" id="log" style="display:none"></div>'+
+   "<section><h2>Repositories you added</h2>"+(added.length?'<table style="max-width:640px"><thead><tr><th>name</th><th>files</th><th>added</th><th></th></tr></thead><tbody>'+added.map(r=>"<tr><td>"+esc(r.repo)+"</td><td>"+r.files+"</td><td>"+esc(r.added||"")+'</td><td><button class="danger" data-del="'+esc(r.repo)+'">Remove</button></td></tr>').join("")+"</tbody></table>":'<p class="soft">None yet.</p>')+"</section>";}
+function logBox(){const b=$("#log");if(!b||!S.job)return;b.style.display="block";const j=S.job;
+  b.innerHTML=esc(j.log.join("\n"))+(j.status==="done"?'\n<span class="ok">Finished.</span>':"")+(j.status==="error"?'\n<span class="err">Failed: '+esc(j.error)+"</span>":"")+(j.status==="running"?"\n\u2026":"");b.scrollTop=b.scrollHeight}
+function poll(id,done){S.busy=true;const t=setInterval(async()=>{let j;try{j=await api("/api/job?id="+id)}catch(e){return}
+  S.job=j;logBox();if(j.status!=="running"){clearInterval(t);S.busy=false;if(j.status==="done")await done(j);else render()}},700)}
+async function start(path,body,done){try{const r=await post(path,body);S.job={status:"running",log:["Started."]};render();logBox();poll(r.job_id,done)}catch(e){S.job={status:"error",log:[],error:e.message};render()}}
+
+// ---------------------------------------------------------------- events
+document.addEventListener("click",async e=>{
+  const rp=e.target.closest("#repos li");if(rp){await pick(rp.dataset.repo);S.tab="overview";render();return}
+  const nav=e.target.closest("#nav a");if(nav){S.tab=nav.dataset.t;render();return}
+  const th=e.target.closest("th[data-k]");if(th){const k=th.dataset.k;S.dir=S.sort===k?-S.dir:-1;S.sort=k;draw();return}
+  const tc=e.target.closest("th[data-c]");if(tc){const k=tc.dataset.c;S.cdir=S.csort===k?-S.cdir:-1;S.csort=k;render();return}
+  const rr=e.target.closest("tr[data-r]");if(rr){await pick(rr.dataset.r);S.tab="overview";render();return}
+  const p=e.target.closest("[data-p]");if(p){S.sel=p.dataset.p;draw();return}
+  if(e.target.id==="run"){const src=$("#src").value.trim();if(!src){S.job={status:"error",log:[],error:"Enter a git URL or a folder path first."};render();return}
+    await start("/api/analyze",{source:src,name:$("#nm").value.trim()},async j=>{await refresh();await pick(j.result);S.tab="overview";render()});return}
+  if(e.target.id==="retrain"){const mode=document.querySelector("input[name=mode]:checked").value;
+    await start("/api/mode",{mode},async()=>{await refresh();if(S.repo)await pick(S.repo);render()});return}
+  const del=e.target.dataset&&e.target.dataset.del;if(del){if(!confirm("Remove '"+del+"' from the training data and retrain?"))return;
+    await start("/api/delete",{repo:del},async()=>{await refresh();if(S.repo===del)await pick(S.repos[0].repo);render()})}
+});
+document.addEventListener("keydown",e=>{if(e.key==="Enter"){const t=e.target.closest&&e.target.closest("[data-p],#repos li,#nav a");if(t&&t.tagName!=="TR")t.click()}});
+document.addEventListener("input",e=>{
+  if(e.target.id==="q"){S.q=e.target.value.toLowerCase();draw()}
+  if(e.target.id==="min"){S.min=parseFloat(e.target.value);$("#minv").textContent=S.min.toFixed(2);draw()}
+  if(e.target.id==="top"){S.top=parseInt(e.target.value);$("#topv").textContent=S.top;draw()}});
+
+(async function boot(){
+  try{await refresh();const added=S.repos.filter(r=>r.source==="added");const first=added.length?added[added.length-1].repo:(S.repos[0]||{}).repo;
+    if(first)await pick(first);render()}
+  catch(e){$("#view").innerHTML='<h1>Could not load data</h1><p class="err">'+esc(e.message)+"</p>"}
+})();
+window.__S=S;
+})();
+</script></body></html>
